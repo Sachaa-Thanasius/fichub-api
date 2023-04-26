@@ -12,7 +12,6 @@ import fichub_api
 
 async def do_work(client: fichub_api.FicHubClient, url: str) -> None:
     story_metadata = await client.get_story_metadata(url)
-    # print(f"{story_metadata.title} (link: '{url}')\n    {story_metadata.description}\n")
     data = [f"{name:>15}  |  {value}" for name, value in attrs.asdict(story_metadata).items()]
     print("\n".join(data), "\n\n-------------------------------\n")
 
@@ -25,7 +24,7 @@ async def test():
 
     print("-----------------FicHub Testing-----------------\n")
 
-    async with fichub_api.FicHubClient(sema_limit=4) as client:
+    async with fichub_api.FicHubClient() as client:
         # Get the metadata for multiple works multiple times.
         test_urls = [
             "https://archiveofourown.org/works/45753478/",

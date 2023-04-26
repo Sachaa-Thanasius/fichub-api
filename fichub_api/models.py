@@ -6,7 +6,8 @@ from urllib.parse import urljoin
 
 from attrs import define, Factory
 from cattrs import Converter
-from cattrs.gen import make_dict_structure_fn
+from cattrs.gen import make_dict_structure_fn, override
+from markdownify import markdownify as md
 
 
 __all__ = ("DownloadUrls", "Author", "Story")
@@ -111,9 +112,7 @@ class Story:
     more_meta: dict[str, Any] = Factory(dict)
 
 
-"""cattrs converter instantiation, hooks, and logic."""
-
-
+# Cattrs converter instantiation, hooks, and logic.
 def _camel_to_snake_case(string: str) -> str:
     """Converts a string from camel case to snake case.
 
@@ -144,6 +143,9 @@ def _fichub_preprocessing(cls: type, c: Converter) -> None:
             if "author" in key:
                 suffix = (key.split("author"))[1]
                 by_suffix.setdefault("author", {})[_camel_to_snake_case(suffix) if suffix else "name"] = val[key]
+
+        # Remove markdown from description.
+        by_suffix["description"] = md(val["description"])
 
         # FicHub only returns the endpoints for Ao3 instead of full links.
         if "archiveofourown.org" in val["source"]:
@@ -188,3 +190,4 @@ _meta_converter = Converter()
 _meta_converter.register_structure_hook(datetime, lambda dt, _: datetime.fromisoformat(dt))
 _meta_converter.register_unstructure_hook(datetime, lambda dt: datetime.isoformat(dt))
 _fichub_preprocessing(Story, _meta_converter)
+# _meta_converter.register_structure_hook(Story, make_dict_structure_fn(Story, _meta_converter, description=override()))

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from typing import TYPE_CHECKING
 from urllib.parse import urljoin
 
 import aiohttp
@@ -11,10 +12,12 @@ from .models import (
     Story,
     DownloadUrls
 )
-from .types import (
-    DownloadData as DownloadDataPayload,
-    StoryMetadata as StoryMetadataPayload,
-)
+
+if TYPE_CHECKING:
+    from .types import (
+        DownloadData as DownloadDataPayload,
+        StoryMetadata as StoryMetadataPayload,
+    )
 
 
 __all__ = ("FICHUB_BASE_URL", "FicHubException", "FicHubClient")
@@ -38,11 +41,11 @@ class FicHubClient:
     ----------
     session : :class:`aiohttp.ClientSession`, optional
         The asynchronous HTTP session to make requests with. If not passed in, automatically generated. Closing it is
-        not handled automatically by the class.
+        not handled automatically by the class if done outside an async context manager.
     headers : dict, optional
         The HTTP headers to send with any requests.
-    sema_limit : :class:`int`, default=5
-        The limit on the number of requests that can be made at once asynchronously. Defaults to 5.
+    sema_limit : :class:`int`
+        The limit on the number of requests that can be made at once asynchronously. If not between 1 and 3, defaults to 2.
     """
 
     def __init__(
@@ -52,9 +55,10 @@ class FicHubClient:
             session: aiohttp.ClientSession | None = None,
             sema_limit: int | None = None
     ) -> None:
-        self._headers = headers or {"User-Agent": f"FicHub API wrapper/v0.0.1+@Thanos"}
-        self._session = session
-        self._semaphore = asyncio.Semaphore(value=(sema_limit if (sema_limit is not None and sema_limit >= 1) else 5))
+        self.headers = headers or {"User-Agent": f"FicHub API wrapper/v0.0.1+@Thanos"}
+        self.session = session
+        self._semaphore = asyncio.Semaphore(value=(sema_limit if (sema_limit and 1 <= sema_limit <= 3) else 2))
+        self._sema_limit = sema_limit
 
         # Use pre-structured converters to convert json responses to models.
         self._dwnld_urls_conv = _download_urls_converter
@@ -66,19 +70,33 @@ class FicHubClient:
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
 
+    @property
+    def sema_limit(self) -> int:
+        """:class:`int`: The counter limit for the number of simultaneous requests."""
+
+        return self._sema_limit
+
+    @sema_limit.setter
+    def sema_limit(self, value: int) -> None:
+        if 1 <= value <= 3:
+            self._sema_limit = value
+            self._semaphore = asyncio.Semaphore(value)
+        else:
+            raise ValueError("To prevent hitting the FicHub API too much, this limit has to be between 1 and 3 inclusive.")
+
     async def start_session(self) -> None:
         """Start an HTTP session attached to this instance if necessary."""
 
-        if (not self._session) or self._session.closed:
-            self._session = aiohttp.ClientSession()
+        if (not self.session) or self.session.closed:
+            self.session = aiohttp.ClientSession()
 
     async def close(self) -> None:
         """Close the HTTP session attached to this instance if necessary."""
 
-        if self._session and (not self._session.closed):
-            await self._session.close()
+        if self.session and (not self.session.closed):
+            await self.session.close()
 
-        self._session = None
+        self.session = None
 
     async def _get(self, endpoint: str, params: dict | None = None) -> dict:
         """Gets fanfiction data from the FicHub API.
@@ -108,7 +126,7 @@ class FicHubClient:
         async with self._semaphore:
             try:
                 url = urljoin(FICHUB_BASE_URL, endpoint)
-                async with self._session.get(url, params=params, headers=self._headers) as response:
+                async with self.session.get(url, params=params, headers=self.headers) as response:
                     response.raise_for_status()
                     data = await response.json()
                     return data
@@ -126,11 +144,12 @@ class FicHubClient:
 
         Returns
         -------
-        metadata : :class:`FFNMetadata`
-            The metadata of the queried fanfic.
+        metadata : :class:`Story`
+            The queried story's metadata.
         """
 
-        payload: StoryMetadataPayload = await self._get("meta", params={"q": url})
+        query = {"q": url}
+        payload: StoryMetadataPayload = await self._get("meta", params=query)
         metadata = self._meta_conv.structure(payload, Story)
         return metadata
 
@@ -148,6 +167,7 @@ class FicHubClient:
             An object containing all download urls returned by the API.
         """
 
-        payload: DownloadDataPayload = await self._get("epub", params={"q": url})
+        query = {"q": url}
+        payload: DownloadDataPayload = await self._get("epub", params=query)
         download_urls = self._dwnld_urls_conv.structure(payload["urls"], DownloadUrls)
         return download_urls
