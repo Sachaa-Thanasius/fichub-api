@@ -6,6 +6,7 @@
     </content>
     <orderEntry type="jdk" jdkName="Python 3.10 (fichub-api)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="atlas-api-wrapper" />
   </component>
   <component name="PackageRequirementsSettings">
     <option name="requirementsPath" value="" />

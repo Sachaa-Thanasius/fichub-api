@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urljoin
 
 import aiohttp
@@ -34,8 +34,6 @@ class FicHubException(Exception):
 
 class FicHubClient:
     """A small async wrapper for accessing FicHub's fanfiction API.
-
-    TODO: Implement cache. Reference: https://realpython.com/lru-cache-python/
 
     Parameters
     ----------
@@ -98,7 +96,7 @@ class FicHubClient:
 
         self.session = None
 
-    async def _get(self, endpoint: str, params: dict | None = None) -> dict:
+    async def _get(self, endpoint: str, params: dict | None = None) -> Any:
         """Gets fanfiction data from the FicHub API.
 
         This restricts the number of simultaneous requests.
@@ -112,7 +110,7 @@ class FicHubClient:
 
         Returns
         -------
-        :class:`StoryMetadata`
+        Any
             The JSON data from the API response.
 
         Raises
@@ -121,6 +119,7 @@ class FicHubClient:
             If there's a client response error.
         """
 
+        # TODO: Implement caching mechanism.
         await self.start_session()
 
         async with self._semaphore:
