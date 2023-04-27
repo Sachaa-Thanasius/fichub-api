@@ -1,5 +1,5 @@
 # FicHub API
- A small asynchronous wrapper for the FicHub API, made to retrieve story data from various fanfiction and original fiction sites.
+ A small asynchronous wrapper for the FicHub API, made to retrieve story data from various fanfiction and original fiction sites. For more information about FicHub, see their [website](https://fichub.net/) and [git repos](https://github.com/FicHub).
 
 ## Installing
 ```shell
