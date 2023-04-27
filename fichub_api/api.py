@@ -6,6 +6,7 @@ from urllib.parse import urljoin
 
 import aiohttp
 
+from . import __version__
 from .models import (
     _meta_converter,
     _download_urls_converter,
@@ -53,7 +54,7 @@ class FicHubClient:
             session: aiohttp.ClientSession | None = None,
             sema_limit: int | None = None
     ) -> None:
-        self.headers = headers or {"User-Agent": f"FicHub API wrapper/v0.0.1+@Thanos"}
+        self.headers = headers or {"User-Agent": f"FicHub API wrapper/v{__version__}+@Thanos"}
         self.session = session
         self._semaphore = asyncio.Semaphore(value=(sema_limit if (sema_limit and 1 <= sema_limit <= 3) else 2))
         self._sema_limit = sema_limit
