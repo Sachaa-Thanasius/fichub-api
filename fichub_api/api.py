@@ -95,8 +95,6 @@ class FicHubClient:
         if self.session and (not self.session.closed):
             await self.session.close()
 
-        self.session = None
-
     async def _get(self, endpoint: str, params: dict | None = None) -> Any:
         """Gets fanfiction data from the FicHub API.
 
