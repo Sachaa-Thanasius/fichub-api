@@ -63,7 +63,7 @@ class FicHubClient:
         self._dwnld_urls_conv = _download_urls_converter
         self._meta_conv = _meta_converter
 
-    async def __aenter__(self) -> FicHubClient:
+    async def __aenter__(self):
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
