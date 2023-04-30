@@ -34,7 +34,7 @@ class FicHubException(Exception):
 
 
 class FicHubClient:
-    """A small async wrapper for accessing FicHub's fanfiction API.
+    """A client for the API wrapper.
 
     Parameters
     ----------
