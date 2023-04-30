@@ -15,7 +15,7 @@ from .models import (
 )
 
 if TYPE_CHECKING:
-    from .types import (
+    from ._types import (
         DownloadData as DownloadDataPayload,
         StoryMetadata as StoryMetadataPayload,
     )
