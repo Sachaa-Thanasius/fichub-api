@@ -6,7 +6,7 @@ from urllib.parse import urljoin
 
 import aiohttp
 
-from . import __version__
+from fichub_api import __version__
 from .models import (
     _meta_converter,
     _download_urls_converter,
