@@ -5,18 +5,18 @@ test.py: A small "test" for the FicHub API wrapper.
 import asyncio
 from time import perf_counter
 
-import attrs
+import msgspec
 
 import fichub_api
 
 
-async def do_work(client: fichub_api.FicHubClient, url: str) -> None:
+async def do_work(client: fichub_api.Client, url: str) -> None:
     story_metadata = await client.get_story_metadata(url)
-    data = [f"{name:>15}  |  {value}" for name, value in attrs.asdict(story_metadata).items()]
+    data = [f"{name:>15}  |  {value}" for name, value in msgspec.structs.asdict(story_metadata).items()]
     print("\n".join(data), "\n\n-------------------------------\n")
 
 
-async def test():
+async def test() -> None:
     """Tests the FicHub API wrapper with different queries.
 
     TODO: Make actual unit tests.
@@ -24,7 +24,7 @@ async def test():
 
     print("-----------------FicHub Testing-----------------\n")
 
-    async with fichub_api.FicHubClient() as client:
+    async with fichub_api.Client() as client:
         # Get the metadata for multiple works multiple times.
         test_urls = [
             "https://archiveofourown.org/works/45753478/",
@@ -38,11 +38,11 @@ async def test():
             "https://www.fanfiction.net/s/13766768/1/Harry-Potter-and-the-Conjoining-of-Paragons/",
             "https://www.fanfiction.net/s/13274956/1/Harry-Potter-Squatter/",
             "https://forums.spacebattles.com/threads/nemesis-worm-au.747148",
-            "https://forums.sufficientvelocity.com/threads/there-is-nothing-to-fear-harry-potter-au-gryffindor-voldemort.49249/"
+            "https://forums.sufficientvelocity.com/threads/there-is-nothing-to-fear-harry-potter-au-gryffindor-voldemort.49249/",
         ]
         start_time = perf_counter()
         coros = [do_work(client, url) for url in test_urls]
-        results = await asyncio.gather(*coros)
+        await asyncio.gather(*coros)
         end_time = perf_counter()
         print(f"Time taken: {end_time - start_time:.5f}")
 

@@ -4,40 +4,102 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fichub_api"
-authors = [
-    { name="Sachaa-Thanasius" },
-]
 description = "A small asynchronous wrapper for the FicHub API, made to retrieve story metadata and download stories from various websites."
+requires-python = ">=3.8"
+version = "0.1.0"
+authors = [{ name = "Sachaa-Thanasius", email = "111999343+Sachaa-Thanasius@users.noreply.github.com" }]
 readme = "README.md"
 license = { file = "LICENSE" }
-requires-python = ">=3.10"
+keywords = ["python", "python-3", "fichub", "webfiction-metadata"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-dependencies = [
-    "aiohttp == 3.8.4",
-    "aiosignal == 1.3.1",
-    "async-timeout == 4.0.2",
-    "attrs == 23.1.0",
-    "beautifulsoup4 == 4.12.2",
-    "cattrs == 22.2.0",
-    "charset-normalizer == 3.1.0",
-    "exceptiongroup == 1.1.1",
-    "frozenlist == 1.3.3",
-    "idna == 3.4",
-    "markdownify == 0.11.6",
-    "multidict == 6.0.4",
-    "six == 1.16.0",
-    "soupsieve == 2.4.1",
-    "yarl == 1.8.2"
-]
-dynamic = ["version"]
+dynamic = ["dependencies"]
 
 [tool.setuptools.dynamic]
-version = { attr = "fichub_api.__version__" }
+dependencies = { file = ["requirements.txt"] }
 
 [project.urls]
-homepage = "https://github.com/Sachaa-Thanasius/fichub-api"
-repository = "https://github.com/Sachaa-Thanasius/fichub-api"
+Homepage = "https://github.com/Sachaa-Thanasius/fichub-api"
+"Bug Tracker" = "https://github.com/Sachaa-Thanasius/fichub-api/issues"
+
+[tool.black]
+line-length = 120
+target-version = ["py38", "py39", "py310", "py311"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py38"
+select = [
+    "F",
+    "E",
+    "I",
+    "UP",
+    "YTT",
+    "ANN",
+    "S",
+    "BLE",
+    "B",
+    "A",
+    "COM",
+    "C4",
+    "DTZ",
+    "EM",
+    "ISC",
+    "G",
+    "INP",
+    "PIE",
+    "T20",
+    "Q003",
+    "RSE",
+    "RET",
+    "SIM",
+    "TID",
+    "PTH",
+    "ERA",
+    "PLC",
+    "PLE",
+    "PLR",
+    "PLW",
+    "TRY",
+    "RUF",
+]
+ignore = [
+    "G002",    # Erroneous issue with %-logging when logging can be configured for % logging.
+    "S101",    # Use of assert here is a known quantity. Blame typing memes.
+    "PLR2004", # Magic value comparison. May remove later.
+    "SIM105",  # Suppressable exception. I'm not paying the overhead of contextlib.suppress for stylistic choices.
+    "C90",     # McCabe complexity memes.
+    "PLR0913", # Some functions require more than 5 arguments.
+    "ANN101",  # Type of self is implicit.
+    "ANN102",  # Type of cls is implicit.
+    "ANN401",  # Need Any for args and kwargs in some places.
+    "A003",    # Shadowing some builtin names.
+    "PD",      # Pandas isn't relevant for this project.
+    "NPY",     # Numpy isn't relevant for this project.
+]
+unfixable = [
+    "ERA",     # I don't want anything erroneously detected deleted by this.
+    "PLC0414", # This causes issues when declaring module imports in __init__ files. Disallow deletion.
+]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = [
+    "F403",    # Undefined import with star
+    "PLC0414", # Import alias does not rename original package
+]
+
+[tool.ruff.isort]
+lines-after-imports = 2
+combine-as-imports = true
+
+[tool.pyright]
+include = ["fichub_api", "tests"]
+
+pythonVersion = "3.8"
+typeCheckingMode = "strict"
+reportPrivateUsage = "none"
+reportMissingTypeStubs = "warning"
+reportUnnecessaryTypeIgnoreComment = "warning"
