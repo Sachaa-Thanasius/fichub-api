@@ -6,15 +6,27 @@ build-backend = "setuptools.build_meta"
 name = "fichub_api"
 description = "A small asynchronous wrapper for the FicHub API, made to retrieve story metadata and download stories from various websites."
 requires-python = ">=3.8"
-version = "0.1.0"
+version = "0.2.0"
 authors = [{ name = "Sachaa-Thanasius", email = "111999343+Sachaa-Thanasius@users.noreply.github.com" }]
 readme = "README.md"
 license = { file = "LICENSE" }
 keywords = ["python", "python-3", "fichub", "webfiction-metadata"]
 classifiers = [
-    "Programming Language :: Python :: 3",
+    "Development Status :: 3 - Alpha",
+    "Framework :: aiohttp",
     "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
     "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Internet",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+    "Typing :: Typed",
 ]
 dynamic = ["dependencies"]
 
@@ -82,14 +94,11 @@ ignore = [
 ]
 unfixable = [
     "ERA",     # I don't want anything erroneously detected deleted by this.
-    "PLC0414", # This causes issues when declaring module imports in __init__ files. Disallow deletion.
 ]
 
 [tool.ruff.per-file-ignores]
-"__init__.py" = [
-    "F403",    # Undefined import with star
-    "PLC0414", # Import alias does not rename original package
-]
+"examples/*.py" = ["INP001", "T201"] # Leave the examples alone.
+"tests/*.py" = ["INP001", "T201"] # Leave the tests alone.
 
 [tool.ruff.isort]
 lines-after-imports = 2
@@ -100,6 +109,5 @@ include = ["fichub_api", "tests"]
 
 pythonVersion = "3.8"
 typeCheckingMode = "strict"
-reportPrivateUsage = "none"
 reportMissingTypeStubs = "warning"
 reportUnnecessaryTypeIgnoreComment = "warning"

@@ -204,6 +204,11 @@ class Story(msgspec.Struct):
     more_meta: dict[str, Any] = msgspec.field(default_factory=dict)
 
 
+class StoryDownload(msgspec.Struct):
+    meta: Story | None
+    urls: DownloadUrls
+
+
 def _camel_to_snake_case(string: str) -> str:
     """Converts a string from camel case to snake case.
 
@@ -401,10 +406,16 @@ class Client:
         """
 
         query = {"q": url}
-        return parse_story(await self._get("/meta", params=query))
+        try:
+            return parse_story(await self._get("/meta", params=query))
+        except (msgspec.MsgspecError, KeyError) as err:
+            msg = f"Unable to load story metadata from url: {url}"
+            raise FicHubException(msg) from err
 
-    async def get_download_urls(self, url: str) -> DownloadUrls:
+    async def get_download_urls(self, url: str) -> StoryDownload:
         """Gets all the download urls for a fanfic in various formats, including epub, html, mobi, and pdf.
+
+        This may also include the story metadata.
 
         Parameters
         ----------
@@ -418,5 +429,21 @@ class Client:
         """
 
         query = {"q": url}
-        data = msgspec.json.decode(await self._get("/epub", params=query))
-        return msgspec.convert(data["urls"], type=DownloadUrls, dec_hook=lambda _, v: urljoin("https://fichub.net/", v))
+        data = _DECODER.decode(await self._get("/epub", params=query))
+
+        try:
+            meta = msgspec.convert(shape_data(data["meta"]), type=Story)
+        except (msgspec.MsgspecError, KeyError):
+            meta = None
+
+        try:
+            urls = msgspec.convert(
+                data["urls"],
+                type=DownloadUrls,
+                dec_hook=lambda _, v: urljoin("https://fichub.net/", v),
+            )
+        except (msgspec.MsgspecError, KeyError) as err:
+            msg = f"Unable to load story download urls from url: {url}"
+            raise FicHubException(msg) from err
+        else:
+            return StoryDownload(meta, urls)
