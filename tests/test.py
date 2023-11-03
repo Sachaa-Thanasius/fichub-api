@@ -26,12 +26,16 @@ urls = [
     "https://www.fanfiction.net/s/13274956/1/Harry-Potter-Squatter/",
     "https://forums.spacebattles.com/threads/nemesis-worm-au.747148",
     "https://forums.sufficientvelocity.com/threads/there-is-nothing-to-fear-harry-potter-au-gryffindor-voldemort.49249/",
+    "https://www.fanfiction.net/s/14295079/1/The-Crow-Rebooted",
+    "https://archiveofourown.org/works/51331387",
 ]
 
 
 async def do_work(client: fichub_api.Client, url: str) -> list[str]:
-    story_metadata = await client.get_story_metadata(url)
-    return [f"{name:>15}  |  {value}" for name, value in msgspec.structs.asdict(story_metadata).items()]
+    story = await client.get_story_downloads(url)
+    _ = {story: "test"}  # Test for hashability.
+    assert story.meta
+    return [f"{name:>15}  |  {value}" for name, value in msgspec.structs.asdict(story.meta).items()]
 
 
 async def test() -> None:

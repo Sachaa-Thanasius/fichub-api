@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime
+import datetime
 from importlib.metadata import version as im_version
-from typing import TYPE_CHECKING, Any, TypedDict
+from typing import TYPE_CHECKING, Any, Union
 from urllib.parse import urljoin
 
 import aiohttp
@@ -15,10 +15,10 @@ if TYPE_CHECKING:
 
     from typing_extensions import Self
 else:
-    Self = Any
+    TracebackType = Self = object
 
 
-__all__ = ("FICHUB_BASE_URL", "FicHubException", "DownloadUrls", "Author", "Story", "Client")
+__all__ = ("FICHUB_BASE_URL", "FicHubException", "Story", "StoryDownload", "Client")
 
 _DECODER = msgspec.json.Decoder()
 FICHUB_BASE_URL = "https://fichub.net/api/v0"
@@ -28,82 +28,191 @@ class FicHubException(Exception):
     """The base exception for the FicHub API."""
 
 
-class ExtendedMetadataFFN(TypedDict, total=False):
-    category: str
-    chapters: str
-    characters: str
-    crossover: bool
-    fandom_ids: list[str]
-    fandom_stubs: list[str]
-    favorites: str
-    follows: str
-    genres: str
-    id: str
-    language: str
-    published: str
-    rated: str
-    raw_fandom: str
-    reviews: str
-    updated: str
-    words: str
+class AO3Stats(msgspec.Struct, frozen=True):
+    """The basic statistics for a story from AO3.
+
+    Attributes
+    ----------
+    bookmarks: :class:`int`, default=0
+        The number of bookmarks this story has.
+    comments: :class:`int`, default=0
+        The number of comments this story has.
+    hits: :class:`int`, default=0
+        The number of hits this story has.
+    kudos: :class:`int`, default=0
+        The number of kudos this story has. Defaults to 0.
+    """
+
+    bookmarks: int = 0
+    comments: int = 0
+    hits: int = 0
+    kudos: int = 0
 
 
-class ExtendedMetadataAO3(TypedDict, total=False):
-    category: list[str]
-    category_hrefs: list[str]
-    character: list[str]
-    character_hrefs: list[str]
-    fandom: list[str]
-    fandom_hrefs: list[str]
-    freeform: list[str]
-    freeform_hrefs: list[str]
-    language: str
-    rating: list[str]
-    rating_hrefs: list[str]
-    relationship: list[str]
-    relationship_hrefs: list[str]
-    stats: dict[str, str]
-    warning: list[str]
-    warning_hrefs: list[str]
+class FFNStats(msgspec.Struct, frozen=True):
+    """The basic statistics for a story from FFN.
+
+    Attributes
+    ----------
+    favorites: :class:`int`, default=0
+        The number of favorites this story has.
+    follows: :class:`int`, default=0
+        The number of follows this story has.
+    reviews: :class:`int`, default=0
+        The number of reviews this story has.
+    """
+
+    favorites: int = 0
+    follows: int = 0
+    reviews: int = 0
 
 
-class StoryMetadata(TypedDict):
-    author: str
-    authorId: int
-    authorLocalId: str
-    authorUrl: str
-    chapters: int
-    created: str
-    description: str
-    extraMeta: str | None
-    id: str
-    rawExtendedMeta: ExtendedMetadataAO3 | ExtendedMetadataFFN | None
-    source: str
-    sourceId: int
-    status: str
+class NoStats(msgspec.Struct, frozen=True):
+    """The statistics for a story where those fields are inaccessible through Fichub."""
+
+
+class Author(msgspec.Struct, frozen=True):
+    """The basic metadata of an author.
+
+    Attributes
+    ----------
+    id: :class:`int`
+        An arbitrary FicHub author id.
+    local_id: :class:`str`
+        The id of the author on a particular website.
+    name: :class:`str`
+        The name of the author.
+    url: :class:`str`
+        The url of the author's profile on a particular website.
+    """
+
+    id: int
+    local_id: str
+    name: str
+    url: str
+
+
+class Tags(msgspec.Struct, frozen=True):
+    """The AO3-specific tags attached to a story.
+
+    Attributes
+    ----------
+    category: tuple[:class:`str`, ...]
+        The category-type tags for this story. Defaults to an empty tuple.
+    freeform: tuple[:class:`str`, ...]
+        The freeform-type tags for this story. Defaults to an empty tuple.
+    relationship: tuple[:class:`str`, ...]
+        The relationship-type tags for this story. Defaults to an empty tuple.
+    warning: tuple[:class:`str`, ...]
+        The warning-type tags for this story. Defaults to an empty tuple.
+    """
+
+    category: tuple[str, ...] = msgspec.field(default_factory=tuple)
+    freeform: tuple[str, ...] = msgspec.field(default_factory=tuple)
+    relationship: tuple[str, ...] = msgspec.field(default_factory=tuple)
+    warning: tuple[str, ...] = msgspec.field(default_factory=tuple)
+
+
+class BaseStory(msgspec.Struct, frozen=True):
+    """The basic metadata of a work retrieved from FicHub.
+
+    Attributes
+    ----------
+    author: :class:`Author`
+        The author's information. Some of it is website-specific.
+    title: :class:`str`
+        The story title.
+    description: :class:`str`
+        The description or summary.
+    url: :class:`str`
+        The source url.
+    chapters: :class:`int`
+        The number of chapters.
+    created: :class:`datetime.datetime`
+        The date and time when the story was published.
+    updated: :class:`datetime.datetime`
+        The date and time when the story was last updated.
+    status: :class:`str`
+        The completion status. Can be either "ongoing" or "complete".
+    words: :class:`int`
+        The number of words in the story.
+    language: :class:`str`, default="English"
+        The language the story is written in.
+    rating: :class:`str`, default="No Rating"
+        The maturity rating of the story.
+    fandoms: tuple[:class:`str`, ...]
+        The fandom(s) this story occupies.
+    characters: tuple[:class:`str`, ...]
+        The declared cast of characters.
+    """
+
+    author: Author
     title: str
-    updated: str
+    description: str
+    url: str
+    chapters: int
+    created: datetime.datetime
+    updated: datetime.datetime
+    status: str
     words: int
+    language: str = "English"
+    rating: str = "No Rating"
+    fandoms: tuple[str, ...] = msgspec.field(default_factory=tuple)
+    characters: tuple[str, ...] = msgspec.field(default_factory=tuple)
 
 
-class DownloadData(TypedDict):
-    epub_url: str
-    err: int
-    fixits: list[Any]
-    hashes: dict[str, str]
-    html_url: str
-    info: str
-    meta: StoryMetadata
-    mobi_url: str
-    notes: list[str]
-    pdf_url: str
-    q: str
-    slug: str
-    urlId: str
-    urls: dict[str, str]
+class AO3Story(BaseStory, frozen=True, tag="ao3"):
+    """Slightly specialized story metadata retrieved from Fichub for an AO3 work.
+
+    Attributes
+    ----------
+    is_crossover: :class:`bool`, default=False
+        Whether this story is a crossover. Defaults to False.
+    tags: :class:`Tags`
+        The other AO3-specific tags attached to this story. Defaults to a collection of empty tuples.
+    stats: :class:`AO3Stats`
+        The story metrics specific to this site. Defaults to a collection of zeros.
+    """
+
+    is_crossover: bool = False
+    tags: Tags = msgspec.field(default_factory=Tags)
+    stats: AO3Stats = msgspec.field(default_factory=AO3Stats)
 
 
-class DownloadUrls(msgspec.Struct):
+class FFNStory(BaseStory, frozen=True, tag="ffn"):
+    """Slightly specialized story metadata retrieved from Fichub for an FFN work.
+
+    Attributes
+    ----------
+    is_crossover: :class:`bool`, default=False
+        Whether this story is a crossover. Defaults to False.
+    genres: :class:`str`
+        The FFN-specific genres of the work. Must be parsed manually.
+    stats: :class:`FFNStats`
+        The story metrics specific to this site. Defaults to a collection of zeros.
+    """
+
+    is_crossover: bool = False
+    genres: str = ""
+    stats: FFNStats = msgspec.field(default_factory=FFNStats)
+
+
+class OtherStory(BaseStory, frozen=True, tag="other"):
+    """General story metadata retrieved from Fichub.
+
+    Attributes
+    ----------
+    stats: :class:`NoStats`
+        An empty story metrics class.
+    """
+
+    stats: NoStats = msgspec.field(default_factory=NoStats)
+
+
+Story = Union[AO3Story, FFNStory, OtherStory]
+
+
+class DownloadUrls(msgspec.Struct, frozen=True):
     """A collection of download links for a story retrieved from FicHub.
 
     Attributes
@@ -128,92 +237,16 @@ class DownloadUrls(msgspec.Struct):
     pdf: str
 
 
-class Author(msgspec.Struct):
-    """The basic metadata of an author.
+class StoryDownload(msgspec.Struct, frozen=True):
+    """The story's download links and metadata."""
 
-    Attributes
-    ----------
-    id: :class:`int`
-        An arbitrary FicHub author id.
-    local_id: :class:`str`
-        The id of the author on a particular website.
-    name: :class:`str`
-        The name of the author.
-    url: :class:`str`
-        The url of the author's profile on a particular website.
-    """
-
-    id: int
-    local_id: str
-    name: str
-    url: str
-
-
-class Story(msgspec.Struct):
-    """The basic metadata of a work retrieved from FicHub.
-
-    Attributes
-    ----------
-    author: :class:`Author`
-        The author's information. Some of it is website-specific.
-    title: :class:`str`
-        The story title.
-    description: :class:`str`
-        The description or summary.
-    url: :class:`str`
-        The source url.
-    chapters: :class:`int`
-        The number of chapters.
-    created: :class:`datetime`
-        The date and time when the story was published.
-    updated: :class:`datetime`
-        The date and time when the story was last updated.
-    status: :class:`str`
-        The completion status. Can be either "ongoing" or "complete".
-    words: :class:`int`
-        The number of words in the story.
-    language: :class:`str`
-        The language the story is written in.
-    rating: :class:`str`, default="No Rating"
-        The maturity rating of the story.
-    fandoms: list[:class:`str`]
-        The fandom(s) this story occupies.
-    characters: list[:class:`str`]
-        The declared cast of characters.
-    stats: dict[:class:`str`, :class:`int`]
-        The story metrics, such as hits on Ao3 or favorites on FFN. Differs between sites, so they must be accessed by
-        name manually.
-    more_meta: dict[:class:`str`, Any]
-        Extra metadata, such as href endpoints from AO3. must be accessed by name manually.
-    """
-
-    author: Author
-    title: str
-    description: str
-    url: str
-    chapters: int
-    created: datetime
-    updated: datetime
-    status: str
-    words: int
-    language: str = "English"
-    rating: str = "No Rating"
-    fandoms: list[str] = msgspec.field(default_factory=list)
-    characters: list[str] = msgspec.field(default_factory=list)
-    stats: dict[str, int] = msgspec.field(default_factory=dict)
-    more_meta: dict[str, Any] = msgspec.field(default_factory=dict)
-
-
-class StoryDownload(msgspec.Struct):
-    meta: Story | None
     urls: DownloadUrls
+    meta: Story | None = None
 
 
 def _camel_to_snake_case(string: str) -> str:
     """Converts a string from camel case to snake case.
 
-    References
-    ----------
     Source of code: https://stackoverflow.com/questions/1175208/elegant-python-function-to-convert-camelcase-to-snake-case#comment133686723_44969381
     """
 
@@ -226,57 +259,75 @@ def _camel_to_snake_case(string: str) -> str:
 
 
 def shape_data(data: dict[str, Any]) -> dict[str, Any]:
-    # TODO: See if this can be optimized.
-    by_suffix: dict[str, Any] = {}
+    # TODO: Find a way to optimize this.
+    shaped: dict[str, Any] = {}
+
+    # Identify site origin.
+    if "fanfiction.net" in data["source"]:
+        type_ = "ffn"
+    elif "archiveofourown.org" in data["source"]:
+        type_ = "ao3"
+    else:
+        type_ = "other"
 
     # Collect author info.
     for key in data:
         if "author" in key:
             suffix = (key.split("author"))[1]
-            by_suffix.setdefault("author", {})[_camel_to_snake_case(suffix) if suffix else "name"] = data[key]
+            shaped.setdefault("author", {})[_camel_to_snake_case(suffix) if suffix else "name"] = data[key]
 
     # Fix Ao3 links for authors.
-    if "archiveofourown.org" in data["source"]:
-        by_suffix["author"]["url"] = urljoin("https://www.archiveofourown.org", by_suffix["author"]["url"])
+    if type_ == "ao3":
+        shaped["author"]["url"] = urljoin("https://www.archiveofourown.org", shaped["author"]["url"])
 
     # Adjust other metadata.
     if more_meta := data["rawExtendedMeta"]:
-        if "fanfiction.net" in data["source"]:
-            story_stats = {
-                key: int(more_meta.pop(key, "0").replace(",", "")) for key in ("favorites", "follows", "reviews")
+        if type_ == "ffn":
+            story_stats: dict[str, Any] = {
+                key: int(more_meta.get(key, "0").replace(",", "")) for key in ("favorites", "follows", "reviews")
             }
-            rating = more_meta.pop("rated")
-            if len(fandoms := more_meta.pop("raw_fandom").split(" + ", 1)) > 1:
+            rating = more_meta["rated"]
+            if len(fandoms := more_meta["raw_fandom"].split(" + ", 1)) > 1:
                 fandoms[-1] = fandoms[-1].removesuffix(" Crossover")
             characters = [
                 char
-                for char in more_meta.pop("characters").replace("[", ", ").replace("]", ", ").split(", ")
+                for char in more_meta["characters"].replace("[", ", ").replace("]", ", ").split(", ")
                 if char.strip()
             ]
-        elif "archiveofourown.org" in data["source"]:
+            crossover = more_meta.get("crossover")
+            shaped.update({"genres": more_meta.get("genres", "")})
+        elif type_ == "ao3":
             story_stats = {
-                key: int(more_meta["stats"].pop(key, "0").replace(",", ""))
+                key: int(more_meta["stats"].get(key, "0").replace(",", ""))
                 for key in ("bookmarks", "comments", "hits", "kudos")
             }
-            rating = more_meta.pop("rating")[0]
+            rating = more_meta.get("rating")[0]
             fandoms = more_meta.pop("fandom")
             characters = more_meta.pop("character")
+            crossover = len(fandoms) > 1
+            shaped.update({"tags": more_meta})
         else:
             story_stats = {}
-            rating, fandoms, characters = "No Rating", [], []
+            rating, fandoms, characters = "No Rating", (), ()
+            crossover = False
 
-        by_suffix.update(
+        try:
+            more_meta.pop("stats")
+        except KeyError:
+            pass
+
+        shaped.update(
             {
                 "language": more_meta.pop("language", "English"),
                 "rating": rating,
                 "fandoms": fandoms,
                 "characters": characters,
                 "stats": story_stats,
-                "more_meta": more_meta,
+                "is_crossover": crossover,
             },
         )
-    by_suffix.update({"url": data.pop("source")})
-    data.update(by_suffix)
+    shaped.update({"url": data.pop("source"), "type": type_})
+    data.update(shaped)
     return data
 
 
@@ -412,7 +463,7 @@ class Client:
             msg = f"Unable to load story metadata from url: {url}"
             raise FicHubException(msg) from err
 
-    async def get_download_urls(self, url: str) -> StoryDownload:
+    async def get_story_downloads(self, url: str) -> StoryDownload:
         """Gets all the download urls for a fanfic in various formats, including epub, html, mobi, and pdf.
 
         This may also include the story metadata.
@@ -424,8 +475,8 @@ class Client:
 
         Returns
         -------
-        :class:`DownloadUrls`
-            An object containing all download urls returned by the API.
+        :class:`StoryDownload`
+            An object containing all the available metadata and download urls returned by the API.
         """
 
         query = {"q": url}
@@ -446,4 +497,4 @@ class Client:
             msg = f"Unable to load story download urls from url: {url}"
             raise FicHubException(msg) from err
         else:
-            return StoryDownload(meta, urls)
+            return StoryDownload(urls, meta)
