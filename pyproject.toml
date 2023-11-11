@@ -109,7 +109,9 @@ lines-after-imports = 2
 combine-as-imports = true
 
 [tool.pyright]
-include = ["fichub_api", "tests"]
+include = ["fichub_api"]
+venvPath = "."
+venv = ".venv"
 
 pythonVersion = "3.8"
 typeCheckingMode = "strict"

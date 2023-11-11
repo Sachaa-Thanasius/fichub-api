@@ -1,0 +1,29 @@
+repos:
+-   repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.5
+    hooks:
+    -   id: ruff
+        args: [ --fix ]
+-   repo: https://github.com/psf/black-pre-commit-mirror
+    rev: 23.11.0
+    hooks:
+    -   id: black
+-   repo: https://github.com/RobertCraigie/pyright-python
+    rev: v1.1.335
+    hooks:
+    -   id: pyright
+        name: pyright (3.8)
+        args: [--pythonversion=3.8]
+        files: \.pyi?$
+    -   id: pyright
+        name: pyright (3.9)
+        args: [--pythonversion=3.9]
+        files: \.pyi?$
+    -   id: pyright
+        name: pyright (3.10)
+        args: [--pythonversion=3.10]
+        files: \.pyi?$
+    -   id: pyright
+        name: pyright (3.11)
+        args: [--pythonversion=3.11]
+        files: \.pyi?$
