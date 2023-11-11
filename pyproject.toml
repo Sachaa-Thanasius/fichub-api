@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "fichub_api"
 description = "A small asynchronous wrapper for the FicHub API, made to retrieve story metadata and download stories from various websites."
 requires-python = ">=3.8"
-version = "0.2.2"
+version = "0.2.3"
 authors = [{ name = "Sachaa-Thanasius", email = "111999343+Sachaa-Thanasius@users.noreply.github.com" }]
 readme = "README.md"
 license = { file = "LICENSE" }
