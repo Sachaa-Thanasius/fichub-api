@@ -247,7 +247,7 @@ class StoryDownload(msgspec.Struct, frozen=True):
 def _camel_to_snake_case(string: str) -> str:
     """Converts a string from camel case to snake case.
 
-    Source of code: https://stackoverflow.com/questions/1175208/elegant-python-function-to-convert-camelcase-to-snake-case#comment133686723_44969381
+    Source: https://stackoverflow.com/questions/1175208/elegant-python-function-to-convert-camelcase-to-snake-case#comment133686723_44969381
     """
 
     return "".join(
@@ -428,7 +428,6 @@ class Client:
             If there's a client response error.
         """
 
-        # TODO: Implement caching mechanism.
         await self.start_session()
         assert self.session
 

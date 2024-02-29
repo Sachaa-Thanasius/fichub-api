@@ -6,8 +6,10 @@ build-backend = "setuptools.build_meta"
 name = "fichub_api"
 description = "A small asynchronous wrapper for the FicHub API, made to retrieve story metadata and download stories from various websites."
 requires-python = ">=3.8"
-version = "0.2.3"
-authors = [{ name = "Sachaa-Thanasius", email = "111999343+Sachaa-Thanasius@users.noreply.github.com" }]
+version = "0.2.4"
+authors = [
+    { name = "Sachaa-Thanasius", email = "111999343+Sachaa-Thanasius@users.noreply.github.com" },
+]
 readme = "README.md"
 license = { file = "LICENSE" }
 keywords = ["python", "python-3", "fichub", "webfiction-metadata"]
@@ -28,25 +30,24 @@ classifiers = [
     "Topic :: Utilities",
     "Typing :: Typed",
 ]
-dynamic = ["dependencies"]
+dependencies = ["aiohttp >= 3.8", "msgspec"]
 
-[tool.setuptools.dynamic]
-dependencies = { file = ["requirements.txt"] }
+[project.optional-dependencies]
+dev = ["pytest", "pytest-asyncio"]
 
 [tool.setuptools.package-data]
 "fichub_api" = ["py.typed"]
 
 [project.urls]
 Homepage = "https://github.com/Sachaa-Thanasius/fichub-api"
-"Bug Tracker" = "https://github.com/Sachaa-Thanasius/fichub-api/issues"
-
-[tool.black]
-line-length = 120
-target-version = ["py38", "py39", "py310", "py311"]
+Issues = "https://github.com/Sachaa-Thanasius/fichub-api/issues"
 
 [tool.ruff]
+include = ["fichub_api/*"]
 line-length = 120
 target-version = "py38"
+
+[tool.ruff.lint]
 select = [
     "F",
     "E",
@@ -67,49 +68,58 @@ select = [
     "INP",
     "PIE",
     "T20",
-    "Q003",
+    "PYI",
     "RSE",
     "RET",
     "SIM",
     "TID",
     "PTH",
     "ERA",
-    "PLC",
-    "PLE",
-    "PLR",
-    "PLW",
+    "PD",
+    "PL",
     "TRY",
+    "NPY",
     "RUF",
 ]
 ignore = [
     "G002",    # Erroneous issue with %-logging when logging can be configured for % logging.
     "S101",    # Use of assert here is a known quantity. Blame typing memes.
     "PLR2004", # Magic value comparison. May remove later.
-    "SIM105",  # Suppressable exception. I'm not paying the overhead of contextlib.suppress for stylistic choices.
+    "SIM105",  # Suppressable exception. contextlib.suppress is a stylistic choice with overhead.
     "C90",     # McCabe complexity memes.
-    "PLR0912", # Number of branches is more than 12.
-    "PLR0913", # Some functions require more than 5 arguments.
-    "ANN101",  # Type of self is implicit.
-    "ANN102",  # Type of cls is implicit.
+    "PLR",     # More complexity things.
+    "ANN101",  # Type of Self for self is implicit.
+    "ANN102",  # Type of type[Self] for cls is implicit.
     "ANN401",  # Need Any for args and kwargs in some places.
     "A003",    # Shadowing some builtin names.
-    "PD",      # Pandas isn't relevant for this project.
-    "NPY",     # Numpy isn't relevant for this project.
+    # False positive for __exit__ annotations when using any placeholders in a type checking block's else clause.
+    "PYI036",
+    # Recommended by Ruff when using Ruff format.
+    "E111",
+    "E114",
+    "E117",
+    "Q003",
+    "COM812",
+    "COM819",
+    # "E501",
+    "ISC001",
+    "ISC002",
 ]
 unfixable = [
     "ERA", # I don't want anything erroneously detected deleted by this.
 ]
 
-[tool.ruff.per-file-ignores]
-"examples/*.py" = ["INP001", "T201"] # Leave the examples alone.
-"tests/*.py" = ["INP001", "T201"]    # Leave the tests alone.
+[tool.ruff.lint.per-file-ignores]
+"examples/*.py" = ["INP001", "T201"]     # Leave the examples alone.
+"tests/*.py" = ["INP001", "T201", "ANN"] # Leave the tests alone.
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 lines-after-imports = 2
 combine-as-imports = true
 
 [tool.pyright]
 include = ["fichub_api"]
+ignore = ["tests"]
 venvPath = "."
 venv = ".venv"
 
