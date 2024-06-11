@@ -33,7 +33,7 @@ classifiers = [
 dependencies = ["aiohttp >= 3.8", "msgspec"]
 
 [project.optional-dependencies]
-dev = ["pytest", "pytest-asyncio"]
+dev = ["typing-extensions", "pytest", "pytest-asyncio"]
 
 [tool.setuptools.package-data]
 "fichub_api" = ["py.typed"]

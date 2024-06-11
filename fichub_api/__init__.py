@@ -15,7 +15,12 @@ if TYPE_CHECKING:
 
     from typing_extensions import Self
 else:
-    TracebackType = Self = object
+
+    class TracebackType:
+        pass
+
+    class Self:
+        pass
 
 
 __all__ = ("FICHUB_BASE_URL", "FicHubException", "Story", "StoryDownload", "Client")
